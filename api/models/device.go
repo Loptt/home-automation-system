@@ -13,9 +13,11 @@ import (
 
 // Device represents a device in a controller.
 type Device struct {
-	ID   primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	Pin  int32              `bson:"pin,omitempty" json:"pin"`
-	Name string             `bson:"name,omitempty" json:"name"`
+	ID     primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	Pin    int32              `bson:"pin,omitempty" json:"pin"`
+	Name   string             `bson:"name,omitempty" json:"name"`
+	User   primitive.ObjectID `bson:"user,omitempty" json:"user"`
+	Status string             `bson:"status,omitempty" json:"status"`
 }
 
 // DeviceController interacts with the device collection in the DB.

@@ -14,7 +14,7 @@ import (
 // User represents a user in a controller.
 type User struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	Email    string             `bson:"email,omitempty" json:"email"`
+	Username string             `bson:"username,omitempty" json:"username"`
 	Password string             `bson:"password,omitempty" json:"password"`
 }
 
@@ -47,6 +47,22 @@ func (uc *UserController) GetAll(ctx context.Context) ([]User, error) {
 func (uc *UserController) GetByID(ctx context.Context, id primitive.ObjectID) (*User, error) {
 	var user User
 	userResult := uc.collection.FindOne(ctx, bson.M{"_id": id})
+	if userResult.Err() != nil {
+		if userResult.Err() == mongo.ErrNoDocuments {
+			return nil, errors.NewServerError("No users found", http.StatusNotFound)
+		}
+		return nil, userResult.Err()
+	}
+
+	userResult.Decode(&user)
+
+	return &user, nil
+}
+
+// GetByUsername retrieves a user given a username string.
+func (uc *UserController) GetByUsername(ctx context.Context, username string) (*User, error) {
+	var user User
+	userResult := uc.collection.FindOne(ctx, bson.M{"username": username})
 	if userResult.Err() != nil {
 		if userResult.Err() == mongo.ErrNoDocuments {
 			return nil, errors.NewServerError("No users found", http.StatusNotFound)

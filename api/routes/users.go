@@ -5,22 +5,23 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Loptt/home-automation-system/api/auth"
 	"github.com/Loptt/home-automation-system/api/errors"
 	"github.com/Loptt/home-automation-system/api/models"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func devices(router *gin.Engine) {
-	router.GET("/devices", devicesAll)
-	router.GET("/devices/:id", devicesGetByID)
-	router.POST("/devices", devicesCreate)
-	router.PUT("/devices/:id", devicesUpdate)
-	router.DELETE("/devices/:id", devicesDelete)
+func users(router *gin.Engine) {
+	router.GET("/users", usersAll)
+	router.GET("/users/:id", usersGetByID)
+	router.POST("/users", usersCreate)
+	router.PUT("/users/:id", usersUpdate)
+	router.DELETE("/users/:id", usersDelete)
 }
 
-func devicesAll(c *gin.Context) {
-	dc, err := models.NewDeviceController()
+func usersAll(c *gin.Context) {
+	uc, err := models.NewUserController()
 	if err != nil {
 		handleError(c, err)
 		return
@@ -29,23 +30,23 @@ func devicesAll(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	devices, err := dc.GetAll(ctx)
+	users, err := uc.GetAll(ctx)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, devices)
+	c.JSON(http.StatusOK, users)
 }
 
-func devicesGetByID(c *gin.Context) {
+func usersGetByID(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		handleError(c, errors.NewServerError("No ID given/Invalid ID to get device", http.StatusNotAcceptable))
+		handleError(c, errors.NewServerError("No ID given/Invalid ID to get user", http.StatusNotAcceptable))
 		return
 	}
 
-	dc, err := models.NewDeviceController()
+	uc, err := models.NewUserController()
 	if err != nil {
 		handleError(c, err)
 		return
@@ -54,18 +55,18 @@ func devicesGetByID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	device, err := dc.GetByID(ctx, id)
+	user, err := uc.GetByID(ctx, id)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, *device)
+	c.JSON(http.StatusOK, *user)
 }
 
-func devicesCreate(c *gin.Context) {
-	var device models.Device
-	dc, err := models.NewDeviceController()
+func usersCreate(c *gin.Context) {
+	var user models.User
+	dc, err := models.NewUserController()
 	if err != nil {
 		handleError(c, err)
 		return
@@ -74,10 +75,16 @@ func devicesCreate(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c.BindJSON(&device)
-	device.Status = "IDLE"
+	c.BindJSON(&user)
+	hashed, err := auth.HashPassword(user.Password)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
 
-	if err := dc.Create(ctx, &device); err != nil {
+	user.Password = hashed
+
+	if err := dc.Create(ctx, &user); err != nil {
 		handleError(c, err)
 		return
 	}
@@ -85,15 +92,15 @@ func devicesCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{})
 }
 
-func devicesUpdate(c *gin.Context) {
-	var device models.Device
+func usersUpdate(c *gin.Context) {
+	var user models.User
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		handleError(c, errors.NewServerError("No ID given/Invalid ID to get device", http.StatusNotAcceptable))
+		handleError(c, errors.NewServerError("No ID given/Invalid ID to get user", http.StatusNotAcceptable))
 		return
 	}
 
-	dc, err := models.NewDeviceController()
+	dc, err := models.NewUserController()
 	if err != nil {
 		handleError(c, err)
 		return
@@ -102,9 +109,16 @@ func devicesUpdate(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c.BindJSON(&device)
+	c.BindJSON(&user)
+	hashed, err := auth.HashPassword(user.Password)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
 
-	if err := dc.Update(ctx, id, &device); err != nil {
+	user.Password = hashed
+
+	if err := dc.Update(ctx, id, &user); err != nil {
 		handleError(c, err)
 		return
 	}
@@ -112,14 +126,14 @@ func devicesUpdate(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{})
 }
 
-func devicesDelete(c *gin.Context) {
+func usersDelete(c *gin.Context) {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		handleError(c, errors.NewServerError("No ID given/Invalid ID to get device", http.StatusNotAcceptable))
+		handleError(c, errors.NewServerError("No ID given/Invalid ID to get user", http.StatusNotAcceptable))
 		return
 	}
 
-	dc, err := models.NewDeviceController()
+	dc, err := models.NewUserController()
 	if err != nil {
 		handleError(c, err)
 		return
