@@ -61,6 +61,26 @@ func (dc *DeviceController) GetByID(ctx context.Context, id primitive.ObjectID) 
 	return &device, nil
 }
 
+// GetByUser retrieves a devices given a user ID.
+func (dc *DeviceController) GetByUser(ctx context.Context, user primitive.ObjectID) ([]Device, error) {
+	cursor, err := dc.collection.Find(ctx, bson.M{"user": user})
+	if err != nil {
+		return nil, err
+	}
+
+	devices := make([]Device, 0)
+
+	for cursor.Next(ctx) {
+		var device Device
+		if err := cursor.Decode(&device); err != nil {
+			return nil, err
+		}
+		devices = append(devices, device)
+	}
+
+	return devices, nil
+}
+
 // Create a new device in the db.
 func (dc *DeviceController) Create(ctx context.Context, device *Device) error {
 	_, err := dc.collection.InsertOne(ctx, *device)
