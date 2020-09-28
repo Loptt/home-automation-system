@@ -35,5 +35,5 @@ func login(c *gin.Context) {
 
 	valid := auth.ValidatePassword(foundUser.Password, user.Password)
 
-	c.JSON(http.StatusOK, gin.H{"valid": valid})
+	c.JSON(http.StatusOK, gin.H{"valid": valid, "user": user.ID.String()})
 }
