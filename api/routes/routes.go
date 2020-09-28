@@ -12,6 +12,7 @@ func Routes(router *gin.Engine) {
 	users(router)
 	devices(router)
 	events(router)
+	configurations(router)
 	authentication(router)
 }
 
