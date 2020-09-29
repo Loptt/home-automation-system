@@ -20,6 +20,25 @@ type Device struct {
 	Status string             `bson:"status,omitempty" json:"status"`
 }
 
+// DeviceEvents represents a device with populated events.
+type DeviceEvents struct {
+	ID     primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	Pin    int32              `bson:"pin,omitempty" json:"pin"`
+	Name   string             `bson:"name,omitempty" json:"name"`
+	User   primitive.ObjectID `bson:"user,omitempty" json:"user"`
+	Status string             `bson:"status,omitempty" json:"status"`
+	Events []Event            `bson:"events,omitempty" json:"events"`
+}
+
+// SetDevice initializes a DeviceEvents with a given Device object.
+func (de *DeviceEvents) SetDevice(d Device) {
+	de.ID = d.ID
+	de.Pin = d.Pin
+	de.Name = d.Name
+	de.User = d.User
+	de.Status = d.Status
+}
+
 // DeviceController interacts with the device collection in the DB.
 type DeviceController struct {
 	collection *mongo.Collection
@@ -76,6 +95,42 @@ func (dc *DeviceController) GetByUser(ctx context.Context, user primitive.Object
 			return nil, err
 		}
 		devices = append(devices, device)
+	}
+
+	return devices, nil
+}
+
+// GetByUserWithEvents retrieves a devices given a user ID with all the associated events.
+func (dc *DeviceController) GetByUserWithEvents(ctx context.Context, user primitive.ObjectID) ([]DeviceEvents, error) {
+	cursor, err := dc.collection.Find(ctx, bson.M{"user": user})
+	if err != nil {
+		return nil, err
+	}
+
+	ec, err := NewEventController()
+	if err != nil {
+		return nil, err
+	}
+
+	devices := make([]DeviceEvents, 0)
+
+	for cursor.Next(ctx) {
+		var device Device
+		var deviceEvent DeviceEvents
+		if err := cursor.Decode(&device); err != nil {
+			return nil, err
+		}
+
+		deviceEvent.SetDevice(device)
+
+		events, err := ec.GetByDevice(ctx, device.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		deviceEvent.Events = events
+
+		devices = append(devices, deviceEvent)
 	}
 
 	return devices, nil

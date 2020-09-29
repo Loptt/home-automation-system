@@ -80,13 +80,13 @@ func configurationsGetByUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	configurations, err := cc.GetByUser(ctx, user)
+	configuration, err := cc.GetByUser(ctx, user)
 	if err != nil {
 		handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, configurations)
+	c.JSON(http.StatusOK, configuration)
 }
 
 func configurationsCreate(c *gin.Context) {
@@ -103,6 +103,8 @@ func configurationsCreate(c *gin.Context) {
 	c.BindJSON(&configuration)
 	configuration.SystemStatus = "ACTIVE"
 	configuration.RainPercentage = 80
+	configuration.DefaultDuration = 10
+	configuration.Update = true
 
 	if err := cc.Create(ctx, &configuration); err != nil {
 		handleError(c, err)

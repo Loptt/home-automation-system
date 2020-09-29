@@ -13,10 +13,12 @@ import (
 
 // Configuration represents a single user global config parameters
 type Configuration struct {
-	ID             primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	User           primitive.ObjectID `bson:"user,omitempty" json:"user"`
-	SystemStatus   string             `bson:"systemStatus,omitempty" json:"systemStatus"`
-	RainPercentage int                `bson:"rainPercentage,omitempty" json:"rainPercentage"`
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	User            primitive.ObjectID `bson:"user,omitempty" json:"user"`
+	SystemStatus    string             `bson:"systemStatus,omitempty" json:"systemStatus"`
+	RainPercentage  int                `bson:"rainPercentage,omitempty" json:"rainPercentage"`
+	DefaultDuration int                `bson:"defaultDuration,omitempty" json:"defaultDuration"`
+	Update          bool               `bson:"update,omitempty" json:"update"`
 }
 
 // ConfigurationController interacts with the configuration collection in the DB.
@@ -60,24 +62,20 @@ func (dc *ConfigurationController) GetByID(ctx context.Context, id primitive.Obj
 	return &configuration, nil
 }
 
-// GetByUser retrieves a configurations given a user ID.
-func (dc *ConfigurationController) GetByUser(ctx context.Context, user primitive.ObjectID) ([]Configuration, error) {
-	cursor, err := dc.collection.Find(ctx, bson.M{"user": user})
-	if err != nil {
-		return nil, err
-	}
-
-	configurations := make([]Configuration, 0)
-
-	for cursor.Next(ctx) {
-		var configuration Configuration
-		if err := cursor.Decode(&configuration); err != nil {
-			return nil, err
+// GetByUser retrieves a configuration given a user ID.
+func (dc *ConfigurationController) GetByUser(ctx context.Context, user primitive.ObjectID) (*Configuration, error) {
+	var configuration Configuration
+	configurationResult := dc.collection.FindOne(ctx, bson.M{"user": user})
+	if configurationResult.Err() != nil {
+		if configurationResult.Err() == mongo.ErrNoDocuments {
+			return nil, errors.NewServerError("No configurations found for user", http.StatusNotFound)
 		}
-		configurations = append(configurations, configuration)
+		return nil, configurationResult.Err()
 	}
 
-	return configurations, nil
+	configurationResult.Decode(&configuration)
+
+	return &configuration, nil
 }
 
 // Create a new configuration in the db.

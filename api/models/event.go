@@ -17,9 +17,15 @@ type eventTime struct {
 	Minute int `bson:"minute,omitempty" json:"minute"`
 }
 
+// eventRepetition represents how an event should be repeated. If times is greater than 0,
+// the event will be repeated N times before being deleted. If date is anything later than
+// Unix epoch, the event will be executed as long as the current date is less that the
+// specified date.
+// If both are set to their default values, then the event will be executed indefinitely.
 type eventRepetition struct {
-	Times int       `bson:"times,omitempty" json:"times"`
-	Date  time.Time `bson:"date,omitempty" json:"date"`
+	Times   int       `bson:"times,omitempty" json:"times"`
+	Date    time.Time `bson:"date,omitempty" json:"date"`
+	Current int       `bson:"current,omitempty" json:"current"`
 }
 
 // Event represents a trigger event for a device

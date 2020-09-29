@@ -15,6 +15,7 @@ func devices(router *gin.Engine) {
 	router.GET("/devices", devicesAll)
 	router.GET("/devices/by-id/:id", devicesGetByID)
 	router.GET("/devices/by-user/:user", devicesGetByUser)
+	router.GET("/devices/by-user-with-events/:user", devicesGetByUserWithEvents)
 	router.POST("/devices", devicesCreate)
 	router.PUT("/devices/:id", devicesUpdate)
 	router.DELETE("/devices/:id", devicesDelete)
@@ -81,6 +82,31 @@ func devicesGetByUser(c *gin.Context) {
 	defer cancel()
 
 	devices, err := dc.GetByUser(ctx, user)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, devices)
+}
+
+func devicesGetByUserWithEvents(c *gin.Context) {
+	user, err := primitive.ObjectIDFromHex(c.Param("user"))
+	if err != nil {
+		handleError(c, errors.NewServerError("No user given/Invalid user to get device", http.StatusNotAcceptable))
+		return
+	}
+
+	dc, err := models.NewDeviceController()
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	devices, err := dc.GetByUserWithEvents(ctx, user)
 	if err != nil {
 		handleError(c, err)
 		return
