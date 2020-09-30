@@ -9,6 +9,17 @@ class Time:
     def __eq__(self, other):
         return self.hour == other.hour and self.minute == other.minute
 
+    def __str__(self):
+        hour = str(self.hour)
+        minute = str(self.minute)
+
+        if self.hour < 10:
+            hour = "0" + hour
+        if self.minute < 10:
+            minute = "0" + minute
+
+        return hour + ":" + minute
+
 
 class Repetition:
 
@@ -19,6 +30,9 @@ class Repetition:
 
     def __eq__(self, other):
         return self.times == other.times and self.date == other.date and self.current == other.current
+
+    def __str__(self):
+        return "  Times: " + str(self.times) + "\n  Date: " + str(self.date) + "\n  Current: " + str(self.current)
 
 
 class Event:
@@ -32,3 +46,6 @@ class Event:
 
     def __eq__(self, other):
         return self.pin == other.pin and self.days == other.days and self.time == other.time and self.repetition == other.repetition and self.duration == other.duration
+
+    def __str__(self):
+        return "Pin: " + str(self.pin) + "\nDays: " + str(self.days) + "\nTime: " + str(self.time) + "\nRepetition: " + str(self.repetition) + "\nDuration: " + str(self.duration)

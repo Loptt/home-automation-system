@@ -110,6 +110,32 @@ func (ec *EventController) Create(ctx context.Context, event *Event) error {
 	return nil
 }
 
+// Update an existing device in the db.
+func (ec *EventController) Update(ctx context.Context, id primitive.ObjectID, event *Event) error {
+	updateResult := ec.collection.FindOneAndReplace(ctx, bson.M{"_id": id}, *event)
+	if updateResult.Err() != nil {
+		if updateResult.Err() == mongo.ErrNoDocuments {
+			return errors.NewServerError("No events found", http.StatusNotFound)
+		}
+		return updateResult.Err()
+	}
+
+	return nil
+}
+
+// Delete a device given an ID
+func (ec *EventController) Delete(ctx context.Context, id primitive.ObjectID) error {
+	deleteResult := ec.collection.FindOneAndDelete(ctx, bson.M{"_id": id})
+	if deleteResult.Err() != nil {
+		if deleteResult.Err() == mongo.ErrNoDocuments {
+			return errors.NewServerError("No events found", http.StatusNotFound)
+		}
+		return deleteResult.Err()
+	}
+
+	return nil
+}
+
 // NewEventController creates a DeviceController with the correct collection.
 func NewEventController() (*EventController, error) {
 	db, err := db.Database()

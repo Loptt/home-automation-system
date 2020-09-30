@@ -16,6 +16,8 @@ func events(router *gin.Engine) {
 	router.GET("/events/by-id/:id", eventsGetByID)
 	router.GET("/events/by-device/:device", eventsGetByDevice)
 	router.POST("/events", eventsCreate)
+	router.PUT("/events/:id", eventsUpdate)
+	router.DELETE("/events/:id", eventsDelete)
 }
 
 func eventsAll(c *gin.Context) {
@@ -89,7 +91,7 @@ func eventsGetByDevice(c *gin.Context) {
 
 func eventsCreate(c *gin.Context) {
 	var event models.Event
-	dc, err := models.NewEventController()
+	ec, err := models.NewEventController()
 	if err != nil {
 		handleError(c, err)
 		return
@@ -100,10 +102,89 @@ func eventsCreate(c *gin.Context) {
 
 	c.BindJSON(&event)
 
-	if err := dc.Create(ctx, &event); err != nil {
+	if err := ec.Create(ctx, &event); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if err := setUpdateOn(ctx, event.Device); err != nil {
 		handleError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{})
+}
+
+func eventsUpdate(c *gin.Context) {
+	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		handleError(c, errors.NewServerError("No ID given/Invalid ID to get event", http.StatusNotAcceptable))
+		return
+	}
+
+	ec, err := models.NewEventController()
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	pevent, err := ec.GetByID(ctx, id)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	event := *pevent
+
+	c.BindJSON(&event)
+
+	if err := ec.Update(ctx, id, &event); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if err := setUpdateOn(ctx, event.Device); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{})
+}
+
+func eventsDelete(c *gin.Context) {
+	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		handleError(c, errors.NewServerError("No ID given/Invalid ID to get event", http.StatusNotAcceptable))
+		return
+	}
+
+	ec, err := models.NewEventController()
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	event, err := ec.GetByID(ctx, id)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if err := ec.Delete(ctx, id); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	if err := setUpdateOn(ctx, event.Device); err != nil {
+		handleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
