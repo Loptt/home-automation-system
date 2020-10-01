@@ -15,6 +15,13 @@ SERVER_URL = "http://127.0.0.1:4747"
 current_events = []
 
 
+def calculate_max_duration(time):
+    hours = 23 - time.hour
+    minutes = 60 - time.minute
+
+    return hours * 60 + minutes
+
+
 def turn_on(pin):
     print("Turn on " + str(pin))
 
@@ -23,24 +30,66 @@ def turn_off(pin):
     print("Turn off " + str(pin))
 
 
+def schedule_off(time, day, duration, pin):
+    new_day = day
+    end_time = e.Time(0, 0)
+
+    if duration > calculate_max_duration(time):
+        # Next day calculation
+        new_day = day + 1
+        off_duration = duration - calculate_max_duration(time)
+        end_time.hour = off_duration // 60
+        end_time.minute = off_duration % 60
+    else:
+        # Same day calculation
+        end_time.hour = time.hour + \
+            (duration // 60) + (time.minute + (duration % 60)) // 60
+        end_time.minute = (time.minute + duration % 60) % 60
+
+    if new_day > 7:
+        new_day = 1
+
+    if new_day == 1:
+        schedule.every().monday.at(str(end_time)).do(turn_off, pin)
+    elif new_day == 2:
+        schedule.every().tuesday.at(str(end_time)).do(turn_off, pin)
+    elif new_day == 3:
+        schedule.every().wednesday.at(str(end_time)).do(turn_off, pin)
+    elif new_day == 4:
+        schedule.every().thursday.at(str(end_time)).do(turn_off, pin)
+    elif new_day == 5:
+        schedule.every().friday.at(str(end_time)).do(turn_off, pin)
+    elif new_day == 6:
+        schedule.every().saturday.at(str(end_time)).do(turn_off, pin)
+    elif new_day == 7:
+        schedule.every().sunday.at(str(end_time)).do(turn_off, pin)
+
+
 def schedule_job(event):
     if len(event.days) == 0 or len(event.days) == 7:
         schedule.every().day.at(str(event.time)).do(turn_on, event.pin)
     else:
         if 1 in event.days:
             schedule.every().monday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 1, event.duration, event.pin)
         if 2 in event.days:
             schedule.every().tuesday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 2, event.duration, event.pin)
         if 3 in event.days:
             schedule.every().wednesday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 3, event.duration, event.pin)
         if 4 in event.days:
             schedule.every().thursday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 4, event.duration, event.pin)
         if 5 in event.days:
             schedule.every().friday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 5, event.duration, event.pin)
         if 6 in event.days:
             schedule.every().saturday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 6, event.duration, event.pin)
         if 7 in event.days:
             schedule.every().sunday.at(str(event.time)).do(turn_on, event.pin)
+            schedule_off(event.time, 7, event.duration, event.pin)
 
 
 def run_scheduling():
@@ -140,7 +189,9 @@ def main():
 
     # Initialize separate thread to run scheduling jobs
     thread = threading.Thread(None, run_scheduling, "Schedule")
-    thread.run()
+    thread.start()
+
+    print("Schedule running.")
 
     while True:
         configuration = get_configuration(user)
