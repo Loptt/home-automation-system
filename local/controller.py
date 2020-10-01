@@ -189,6 +189,8 @@ def setup():
     for pin in pins:
         GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
+    GPIO.cleanup()
+
 
 def main():
     setup()
