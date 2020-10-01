@@ -26,10 +26,12 @@ def calculate_max_duration(time):
 
 def turn_on(pin):
     print("Turn on " + str(pin))
+    GPIO.output(pin, GPIO.HIGH)
 
 
 def turn_off(pin):
     print("Turn off " + str(pin))
+    GPIO.output(pin, GPIO.LOW)
 
 
 def schedule_off(time, day, duration, pin):
@@ -68,6 +70,8 @@ def schedule_off(time, day, duration, pin):
 
 
 def schedule_job(event):
+    GPIO.setup(event.pin, GPIO.OUT)
+
     if len(event.days) == 0 or len(event.days) == 7:
         schedule.every().day.at(str(event.time)).do(turn_on, event.pin)
     else:
@@ -170,6 +174,7 @@ def update_schedules(user):
     devices = r.json()
 
     schedule.clear()
+    GPIO.cleanup()
 
     for device in devices:
         for event in device["events"]:
@@ -178,7 +183,13 @@ def update_schedules(user):
                 device["pin"], event["days"], e.Time(event["time"]["hour"], event["time"]["minute"]), e.Repetition(event["repetition"]["times"], event["repetition"]["date"], event["repetition"]["current"]), event["duration"]))
 
 
+def setup():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+
+
 def main():
+    setup()
     user = ""
     if not os.path.isfile("./config.txt"):
         print("No configuration found... Initializing configuration")
