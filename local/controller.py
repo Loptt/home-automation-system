@@ -14,7 +14,7 @@ import RPi.GPIO as GPIO
 #SERVER_URL = "http://127.0.0.1:4747"
 SERVER_URL = "http://192.168.11.117:4747"
 
-current_events = []
+pins = [2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 17, 18, 22, 23, 24, 27]
 
 
 def calculate_max_duration(time):
@@ -186,6 +186,8 @@ def update_schedules(user):
 def setup():
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
+    for pin in pins:
+        GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
 
 
 def main():
