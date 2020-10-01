@@ -8,9 +8,11 @@ from getpass import getpass
 import schedule
 import event as e
 import configuration as c
+import RPi.GPIO as GPIO
 
 #SERVER_URL = "https://home-automation-289621.uc.r.appspot.com"
-SERVER_URL = "http://127.0.0.1:4747"
+#SERVER_URL = "http://127.0.0.1:4747"
+SERVER_URL = "http://192.168.11.117:4747"
 
 current_events = []
 
